@@ -1,7 +1,0 @@
-int main(){
-	int i = !0x2;
-	if(1 != 2)
-	{
-		float j=!04;
-	}
-}
