@@ -1,0 +1,6 @@
+int main()
+{
+	//int a
+	float i=1e3;
+	int intj = floatc;
+}
