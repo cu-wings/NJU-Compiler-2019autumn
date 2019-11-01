@@ -182,36 +182,28 @@ void addSymbol(char* name, Type type, int line, bool defined)
                         {
                             serror(stradd("Inconsistant declaration of function: ", name), line, 19);
                         }
-                        else
-                        {
-                            serror(stradd("Redefined field: ", current->name), line, 15);
-                        }
-                    }
-                    else
-                    {
-                        serror(stradd("Redefined field: ", current->name), line, 15);
                     }
                 }
                 else if(current->defined == false && defined == true) //this symbol declared but now defined
                 {
-                    if(sameType(current->type, type))
+                    if(!sameType(current->type, type))
+                    {
+                        //one function defined with different declaration
+                        if(current->type->kind == FUNCTION && type->kind == FUNCTION)
+                            serror(stradd("Inconsistant declaration of function: ", name), line, 19);
+                    }
+                    else    //only the param of functions will do this
                     {
                         current->defined = true;
                         flag = true;
                         break;
-                    }
-                    else
-                    {
-                        //two function with the same name declared but not defined
-                        if(current->type->kind == FUNCTION && type->kind == FUNCTION)
-                            serror(stradd("Inconsistant declaration of function: ", name), line, 19);
                     }
                 }
                 else
                 {
                     if(!sameType(current->type, type))
                     {
-                        //two function with the same name declared but not defined
+                        //one function defined with different declaration
                         if(current->type->kind == FUNCTION && type->kind == FUNCTION) 
                         {
                             serror(stradd("Inconsistant declaration of function: ", name), line, 19);
@@ -380,30 +372,40 @@ void FunDec(treeNode* root, Type ret, bool defined)
         func->u.function.ret = ret;
         if(!strcmp(root->child->next->next->name, "VarList"))   //FunDec -> ID LP VarList RP
         {
-            func->u.function.param = VarList(root->child->next->next);
+            func->u.function.param = VarList(root->child->next->next, func);
         }
         else    //FunDec -> ID LP RP
         {
             func->u.function.param = NULL;
         }
         if(DEBUG) printf("%d\n",defined);
+        if(defined)
+        {
+            FieldList temp = func->u.function.param;
+            while(temp)
+            {
+                //unsigned int harshCode = harsh(temp->name);
+                addSymbol(temp->name, temp->type, root->child->line, true);
+                temp = temp->tail;
+            }
+        }
         addSymbol(root->child->s_val, func, root->child->line, defined);
     }
 }
 
-FieldList VarList(treeNode* root)
+FieldList VarList(treeNode* root, Type headType)
 {
     if(root)
     {
         FieldList temp;
         if(root->child->next)   // VarList -> ParamDec COMMA VarList
         {
-            temp = ParamDec(root->child);
-            temp->tail = VarList(root->child->next->next);
+            temp = ParamDec(root->child, headType);
+            temp->tail = VarList(root->child->next->next, headType);
         }
         else    //VarList -> ParamDec
         {
-            temp = ParamDec(root->child);
+            temp = ParamDec(root->child, headType);
             temp->tail = NULL;
         }
         return temp;
@@ -412,13 +414,13 @@ FieldList VarList(treeNode* root)
         return NULL;
 }
 
-FieldList ParamDec(treeNode* root)
+FieldList ParamDec(treeNode* root, Type headType)
 {
     if(root)
     {
         FieldList temp;
         Type type = Specifier(root->child);
-        temp = VarDec_Structure(root->child->next, type);
+        temp = VarDec_Structure(root->child->next, type, headType);
     }
     else
         return NULL;
@@ -460,7 +462,7 @@ Type StructSpecifier(treeNode* root)
                 name = root->child->next->child->s_val;
                 if(DEBUG) printf("%s\n", name);
             }
-            type->u.structure = DefList_Structure(root->child->next->next->next);
+            type->u.structure = DefList_Structure(root->child->next->next->next, type);
             addSymbol(name, type, root->line, true);
             FieldList tmp = type->u.structure;
             /*while(tmp)
@@ -490,12 +492,12 @@ Type StructSpecifier(treeNode* root)
         return NULL;
 }
 
-FieldList DefList_Structure(treeNode* root)
+FieldList DefList_Structure(treeNode* root, Type headType)
 {
     if(DEBUG) printf("DefList\n");
     if(root)
     {
-        FieldList temp = Def_Structure(root->child);
+        FieldList temp = Def_Structure(root->child, headType);
         /*if(temp)
         {
             while(temp->tail)
@@ -504,37 +506,37 @@ FieldList DefList_Structure(treeNode* root)
             }
         }*/
         //temp->tail = (FieldList)malloc(sizeof(FieldList_));
-        temp->tail = DefList_Structure(root->child->next);
+        temp->tail = DefList_Structure(root->child->next, headType);
         return temp;
     }
     else
         return NULL;
 }
 
-FieldList Def_Structure(treeNode* root)
+FieldList Def_Structure(treeNode* root, Type headType)
 {
     if(DEBUG) printf("Def\n");
     if(root)
     {
         FieldList temp; //= (FieldList)malloc(sizeof(FieldList_));
         Type type = Specifier(root->child);
-        temp = DecList_Structure(root->child->next, type);
+        temp = DecList_Structure(root->child->next, type, headType);
         return temp;
     }
     else
         return NULL;
 }
 
-FieldList DecList_Structure(treeNode* root, Type type)
+FieldList DecList_Structure(treeNode* root, Type type, Type headType)
 {
     if(DEBUG) printf("DecList_Structure\n");
     if(root)
     {
         FieldList temp; // = (FieldList)malloc(sizeof(FieldList_));
-        temp = Dec_Structure(root->child, type);
+        temp = Dec_Structure(root->child, type, headType);
         if(root->child->next)
         {
-            temp->tail = DecList_Structure(root->child->next->next, type);
+            temp->tail = DecList_Structure(root->child->next->next, type, headType);
         }
         return temp;
     }
@@ -542,19 +544,19 @@ FieldList DecList_Structure(treeNode* root, Type type)
         return NULL;
 }
 
-FieldList Dec_Structure(treeNode* root, Type type)
+FieldList Dec_Structure(treeNode* root, Type type, Type headType)
 {
     if(root)
     {
         FieldList temp; // = (FieldList)malloc(sizeof(FieldList_));
         if(root->child->next)   //Dec -> VarDec ASSIGNOP Exp
         {
-            temp = VarDec_Structure(root->child, type);
+            temp = VarDec_Structure(root->child, type, headType);
             serror(stradd("Initial field: ", temp->name), root->line, 15);
         }
         else        //Dec -> VarDec
         {
-            temp = VarDec_Structure(root->child, type);
+            temp = VarDec_Structure(root->child, type, headType);
         }
         return temp;
     }
@@ -562,7 +564,7 @@ FieldList Dec_Structure(treeNode* root, Type type)
         return NULL;
 }
 
-FieldList VarDec_Structure(treeNode* root, Type type)
+FieldList VarDec_Structure(treeNode* root, Type type, Type headType)
 {
     if(root)
     {
@@ -588,7 +590,22 @@ FieldList VarDec_Structure(treeNode* root, Type type)
             temp->type = tmp_type;
             currentNode = currentNode->child;
         }
-        addSymbol(temp->name, type, root->line, false);
+        if(headType->kind == FUNCTION)
+            addSymbol(temp->name, type, root->line, false); // the param of function are defined in FunDec
+        else
+        {
+            FieldList tmp = headType->u.structure;
+            while(tmp)
+            {
+                if(temp->name && tmp->name)
+                {
+                    if(!strcmp(temp->name,tmp->name))
+                        serror(stradd("Redefined field: ", temp->name), root->line, 15);
+                }
+                tmp = tmp->tail;
+            }
+            addSymbol(temp->name, type, root->line, true);  // the field of structure are defined here
+        }
         return temp;
     }
     else

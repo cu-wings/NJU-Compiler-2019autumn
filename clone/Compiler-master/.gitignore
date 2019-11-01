@@ -1,0 +1,13 @@
+*.o
+*
+!*/
+!Makefile*
+!*.[cShly]
+!README
+!parser
+!*.txt
+!.gitignore
+!.*
+!testcase/*
+*.swp
+obj/*

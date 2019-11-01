@@ -6,7 +6,7 @@ typedef unsigned short bool;
 #define true 1
 #define false 0
 #define MAX_TABLE 0x3fff
-#define DEBUG 1
+#define DEBUG 0
 extern treeNode *treeRoot;
 typedef struct Type_* Type;
 typedef struct FieldList_* FieldList;
@@ -60,14 +60,14 @@ void CompSt(treeNode* root, Type ret, bool defined);
 void VarDec(treeNode* root, Type type);
 Type StructSpecifier(treeNode* root);
 Type getType(char* name);
-FieldList Def_Structure(treeNode* root);
-FieldList DefList_Structure(treeNode* root);
-FieldList DecList_Structure(treeNode* root, Type type);
-FieldList Dec_Structure(treeNode* root, Type type);
-FieldList VarDec_Structure(treeNode* root, Type type);
+FieldList Def_Structure(treeNode* root, Type headType);
+FieldList DefList_Structure(treeNode* root, Type headType);
+FieldList DecList_Structure(treeNode* root, Type type, Type headType);
+FieldList Dec_Structure(treeNode* root, Type type, Type headType);
+FieldList VarDec_Structure(treeNode* root, Type type, Type headType);
 char* stradd(char* str1, char* str2);
 void CheckFunc();
-FieldList VarList(treeNode* root);
-FieldList ParamDec(treeNode* root);
+FieldList VarList(treeNode* root, Type headType);
+FieldList ParamDec(treeNode* root, Type headType);
 
 #endif

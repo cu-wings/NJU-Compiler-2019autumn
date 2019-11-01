@@ -1,0 +1,9 @@
+int main()
+{
+
+	int a[10];
+	write(a[9]);
+	write(a[9]);
+	return 0;
+
+}

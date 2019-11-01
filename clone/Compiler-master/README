@@ -1,0 +1,7 @@
+南京大学编译原理课程作业
+
+·使用make进行编译
+·使用make test [file=file]运行，file默认为test.cmm，测试文件请放在testcase文件夹下
+·使用make clean清除中间结果
+·使用make submit打包
+
