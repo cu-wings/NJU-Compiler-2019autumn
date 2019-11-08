@@ -58,7 +58,7 @@ Tag : ID {BuildTree(&$$, "Tag", 1, $1);}
 
 VarDec : ID {BuildTree(&$$, "VarDec", 1, $1);}
 | VarDec LB INT RB {BuildTree(&$$, "VarDec", 4, $1, $2, $3, $4);}
-| error RB /*{yyerror("Missing ']'");}*/
+| error RB
 ;
 FunDec : ID LP VarList RP {BuildTree(&$$, "FunDec", 4, $1, $2, $3, $4);}
 | ID LP RP {BuildTree(&$$, "FunDec", 3, $1, $2, $3);}
@@ -70,11 +70,10 @@ ParamDec : Specifier VarDec {BuildTree(&$$, "ParamDec", 2, $1, $2);}
 ;
 
 CompSt : LC DefList StmtList RC {BuildTree(&$$, "CompSt", 4, $1, $2, $3, $4);}
-/*| error RC {yyerror("Missing '}'");};*/
+| error RC
 ;
 StmtList : Stmt StmtList {BuildTree(&$$, "StmtList", 2, $1, $2);}
 | /*%prec EMPTY*/ {$$ = NULL;}
-/*| error StmtList {yyerror("StmtList Missing ';'");}*/
 ;
 Stmt : Exp SEMI {BuildTree(&$$, "Stmt", 2, $1, $2);}
 | CompSt {BuildTree(&$$, "Stmt", 1, $1);}
@@ -82,8 +81,11 @@ Stmt : Exp SEMI {BuildTree(&$$, "Stmt", 2, $1, $2);}
 | IF LP Exp RP Stmt %prec LOWER_THAN_ELSE {BuildTree(&$$, "Stmt", 5, $1, $2, $3, $4, $5);}
 | IF LP Exp RP Stmt ELSE Stmt {BuildTree(&$$, "Stmt", 7, $1, $2, $3, $4, $5, $6, $7);}
 | WHILE LP Exp RP Stmt {BuildTree(&$$, "Stmt", 5, $1, $2, $3, $4, $5);}
-| Exp error /*{yyerror("Missing ';'");}*/
-/*| error SEMI {yyerror("sentence error");}*/
+/*| Exp error {yyerror("Missing ';'");}*/
+| error SEMI
+| IF LP error RP Stmt %prec LOWER_THAN_ELSE
+| IF LP error RP Stmt ELSE Stmt
+| WHILE LP error RP Stmt
 /*| error {yyerror("Missing ';'");}*/
 ;
 DefList : Def DefList {BuildTree(&$$, "DefList", 2, $1, $2);}
@@ -116,7 +118,9 @@ Exp : Exp ASSIGNOP Exp {BuildTree(&$$, "Exp", 3, $1, $2, $3);}
 | ID {BuildTree(&$$, "Exp", 1, $1);}
 | INT {BuildTree(&$$, "Exp", 1, $1);}
 | FLOAT {BuildTree(&$$, "Exp", 1, $1);}
-| Exp LB error /*{yyerror("Missing ']'");}*/
+/*| error RB*/
+/*| error INT
+| error FLOAT*/
 ;
 Args : Exp COMMA Args {BuildTree(&$$, "Args", 3, $1, $2, $3);}
 | Exp {BuildTree(&$$, "Args", 1, $1);}
