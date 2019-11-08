@@ -73,7 +73,7 @@ CompSt : LC DefList StmtList RC {BuildTree(&$$, "CompSt", 4, $1, $2, $3, $4);}
 /*| error RC {yyerror("Missing '}'");};*/
 ;
 StmtList : Stmt StmtList {BuildTree(&$$, "StmtList", 2, $1, $2);}
-| %prec EMPTY {$$ = NULL;}
+| /*%prec EMPTY*/ {$$ = NULL;}
 /*| error StmtList {yyerror("StmtList Missing ';'");}*/
 ;
 Stmt : Exp SEMI {BuildTree(&$$, "Stmt", 2, $1, $2);}

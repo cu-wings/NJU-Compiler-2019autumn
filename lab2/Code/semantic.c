@@ -107,7 +107,7 @@ bool sameType(Type t1, Type t2)
             else
                 return false;
         }
-        else        //kind == FUNCTION
+        else if(t1->kind == FUNCTION)        //kind == FUNCTION
         {
             Type ret1 = t1->u.function.ret, ret2 = t2->u.function.ret;
             FieldList para1 = t1->u.function.param, para2 = t2->u.function.param;
@@ -125,6 +125,14 @@ bool sameType(Type t1, Type t2)
                 else
                     return false;
             }
+            else
+                return false;
+        }
+        else    //kind == STRUCTVAR
+        {
+            FieldList f1 = t1->u.structure, f2 = t2->u.structure;
+            if(!strcmp(f1->name, f2->name))
+                return true;
             else
                 return false;
         }
@@ -164,12 +172,12 @@ void addSymbol(char* name, Type type, int line, bool defined)
             {
                 if(current->defined == true && defined == true)
                 {
-                    if((current->type->kind == ARRAY || current->type->kind == BASIC || current->type->kind == STRUCTURE)
-                    && (type->kind == ARRAY || type->kind == BASIC))
+                    if((current->type->kind == ARRAY || current->type->kind == BASIC || current->type->kind == STRUCTVAR || current->type->kind == STRUCTURE)
+                    && (type->kind == ARRAY || type->kind == BASIC || type->kind == STRUCTVAR))
                         serror(stradd("Redefined Variable: ", name), line, 3);
                     else if(current->type->kind == FUNCTION && type->kind == FUNCTION)
                         serror(stradd("Redefined Function: ", name), line, 4);
-                    else if((current->type->kind == ARRAY || current->type->kind == BASIC || current->type->kind == STRUCTURE)
+                    else if((current->type->kind == ARRAY || current->type->kind == BASIC || current->type->kind == STRUCTVAR || current->type->kind == STRUCTURE)
                     && (type->kind == STRUCTURE))
                         serror(stradd("DupLicated name: ", name), line, 16);
                 }
@@ -313,7 +321,11 @@ void ExtDef(treeNode* root)
         if(type)
         {
             if(!strcmp(root->child->next->name, "ExtDecList"))  //ExtDef -> Specifier ExtDecList SEMI
-                ExtDecList(root->child->next, type);
+            {
+                //TODO: give ExtDecList STRUCTVAR type
+
+                    ExtDecList(root->child->next, type);
+            }
             else
             {
                 if(!strcmp(root->child->next->name, "FunDec"))
@@ -357,10 +369,6 @@ Type Specifier(treeNode* root)
         return NULL;
 }
 
-void ExtDecList(treeNode* root, Type type)
-{
-
-}
 
 void FunDec(treeNode* root, Type ret, bool defined)
 {
@@ -426,18 +434,6 @@ FieldList ParamDec(treeNode* root, Type headType)
         return NULL;
 }
 
-void CompSt(treeNode* root, Type ret, bool defined)
-{
-
-}
-
-void VarDec(treeNode* root, Type type)
-{
-    if(root)
-    {
-
-    }
-}
 
 Type StructSpecifier(treeNode* root)
 {
@@ -453,7 +449,7 @@ Type StructSpecifier(treeNode* root)
             if(DEBUG) printf("OptTag\n");
             Type type = (Type)malloc(sizeof(Type_));
             type->kind = STRUCTURE;
-            type->u.structure = (FieldList)malloc(sizeof(FieldList_));
+            type->u.structure = NULL;
             char* name;
             if(root->child->next->child)    //OptTag -> ID
             {   
@@ -462,27 +458,27 @@ Type StructSpecifier(treeNode* root)
                 name = root->child->next->child->s_val;
                 if(DEBUG) printf("%s\n", name);
             }
-            type->u.structure = DefList_Structure(root->child->next->next->next, type);
+            DefList_Structure(root->child->next->next->next, type);
             addSymbol(name, type, root->line, true);
-            FieldList tmp = type->u.structure;
-            /*while(tmp)
-            {
-                FieldList current = tmp->tail;
-                while(current)
-                {
-                    if(!strcmp(current->name,tmp->name))
-                        serror(stradd("Redefined field: ", current->name), symbolLine(current->name), 15);
-                    current = current->tail;
-                }
-                tmp = tmp->tail;
-            }*/
-            return type;
+            /*Type varType = (Type)malloc(sizeof(Type_));
+            varType->kind = STRUCTVAR;
+            varType->u.structure = (FieldList)malloc(sizeof(FieldList_));
+            varType->u.structure->name = name;
+            varType->u.structure->type = type;
+            varType->u.structure->tail = NULL;*/
+            return type;//varType;
         }
         else        //StructSpecifier -> STRUCT Tag
         {
             if(DEBUG) printf("Tag\n");
-            if(DEBUG) printf("%s\n",root->child->next->child->s_val);
-            Type type = getType(root->child->next->child->s_val);
+            //if(DEBUG) printf("%s\n",root->child->next->child->s_val);
+            Type type = (Type)malloc(sizeof(Type_));
+            type = getType(root->child->next->child->s_val);
+            /*type->kind = STRUCTVAR;
+            type->u.structure = (FieldList)malloc(sizeof(FieldList_));
+            type->u.structure->name = root->child->next->child->s_val;
+            type->u.structure->type = getType(root->child->next->child->s_val);
+            type->u.structure->tail = NULL;*/
             if(type == NULL)
                 serror(stradd("Undefined structure: ", root->child->next->child->s_val), root->child->next->line, 17);
             return type;
@@ -595,16 +591,23 @@ FieldList VarDec_Structure(treeNode* root, Type type, Type headType)
         else
         {
             FieldList tmp = headType->u.structure;
+            bool flag = true;
             while(tmp)
             {
                 if(temp->name && tmp->name)
                 {
                     if(!strcmp(temp->name,tmp->name))
+                    {
                         serror(stradd("Redefined field: ", temp->name), root->line, 15);
+                        flag = false;
+                    }
                 }
                 tmp = tmp->tail;
             }
-            addSymbol(temp->name, type, root->line, true);  // the field of structure are defined here
+            if(flag)
+                addSymbol(temp->name, type, root->line, true);  // the field of structure are defined here
+            if(headType->u.structure == NULL)
+                headType->u.structure = temp;
         }
         return temp;
     }

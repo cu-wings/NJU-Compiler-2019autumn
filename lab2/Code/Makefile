@@ -15,6 +15,7 @@ YFILE = $(shell find ./ -name "*.y")
 SFILE = $(shell find ./ -name "semantic.c")
 LFC = $(shell find ./ -name "*.l" | sed s/[^/]*\\.l/lex.yy.c/)
 YFC = $(shell find ./ -name "*.y" | sed s/[^/]*\\.y/syntax.tab.c/)
+TFC = $(shell find ../Tests/ -name "*.cmm")
 SFO = $(SFILE:.c=.o)
 LFO = $(LFC:.c=.o)
 YFO = $(YFC:.c=.o)
@@ -38,7 +39,7 @@ scanner: lexical
 # 定义的一些伪目标
 .PHONY: clean test phase1
 test:
-	./parser ../Test/test1.cmm
+	./parser $(TFC)
 clean:
 	rm -f parser lex.yy.c syntax.tab.c syntax.tab.h syntax.output scanner
 	rm -f $(OBJS) $(OBJS:.o=.d)

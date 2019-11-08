@@ -6,7 +6,7 @@ typedef unsigned short bool;
 #define true 1
 #define false 0
 #define MAX_TABLE 0x3fff
-#define DEBUG 0
+#define DEBUG 1
 extern treeNode *treeRoot;
 typedef struct Type_* Type;
 typedef struct FieldList_* FieldList;
@@ -16,7 +16,7 @@ typedef struct SymbolTable_ SymbolTable_;
 typedef struct Type_ Type_;
 struct Type_
 {
-    enum { BASIC, ARRAY, STRUCTURE, FUNCTION } kind;
+    enum { BASIC, ARRAY, STRUCTURE, FUNCTION, STRUCTVAR } kind;
     union
     {
         int basic; //int and float
@@ -54,10 +54,7 @@ bool sameType(Type t1, Type t2);
 void ExtDefList(treeNode* root);
 void ExtDef(treeNode* root);
 Type Specifier(treeNode* root);
-void ExtDecList(treeNode* root, Type type);
 void FunDec(treeNode* root, Type ret, bool defined);
-void CompSt(treeNode* root, Type ret, bool defined);
-void VarDec(treeNode* root, Type type);
 Type StructSpecifier(treeNode* root);
 Type getType(char* name);
 FieldList Def_Structure(treeNode* root, Type headType);
@@ -70,4 +67,18 @@ void CheckFunc();
 FieldList VarList(treeNode* root, Type headType);
 FieldList ParamDec(treeNode* root, Type headType);
 
+//2
+void ExtDecList(treeNode* root, Type type);
+void CompSt(treeNode* root, Type ret, bool defined);
+void VarDec(treeNode* root, Type type, bool defined);
+void StmtList(treeNode* root, Type ret);
+void Stmt(treeNode* root, Type ret);
+Type Exp(treeNode* root);
+void Args(treeNode* root, Type type);
+Type FindStructureFiled(Type type, char * name, int line);
+bool isRightValuesOnly(treeNode* root);
+void DefList(treeNode* root, bool defined);
+void Def(treeNode* root, bool defined);
+void DecList(treeNode *root, Type type,  bool defined);
+void Dec(treeNode *root, Type type,  bool defined);
 #endif
