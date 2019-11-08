@@ -2,12 +2,12 @@
 
 Type FindStructureFiled(Type type, char * name, int line)
 {
-	if(type->kind != STRUCTURE/*STRUCTVAR*/) {
+	if(type->kind != STRUCTVAR) {
 		serror("Use '.' for unstructured variables", line, 13);
 		return NULL;
 	}
-	FieldList temp = type->u.structure;//->type->u.structure;
-	while(temp != NULL)           //???
+	FieldList temp = type->u.structure->type->u.structure;
+	while(temp != NULL)
 	{
 		if(!strcmp(temp->name, name)) return temp->type;           
 		temp = temp->tail;

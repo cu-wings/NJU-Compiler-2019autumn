@@ -460,26 +460,26 @@ Type StructSpecifier(treeNode* root)
             }
             DefList_Structure(root->child->next->next->next, type);
             addSymbol(name, type, root->line, true);
-            /*Type varType = (Type)malloc(sizeof(Type_));
+            Type varType = (Type)malloc(sizeof(Type_));
             varType->kind = STRUCTVAR;
             varType->u.structure = (FieldList)malloc(sizeof(FieldList_));
             varType->u.structure->name = name;
             varType->u.structure->type = type;
-            varType->u.structure->tail = NULL;*/
-            return type;//varType;
+            varType->u.structure->tail = NULL;
+            return varType;
         }
         else        //StructSpecifier -> STRUCT Tag
         {
             if(DEBUG) printf("Tag\n");
             //if(DEBUG) printf("%s\n",root->child->next->child->s_val);
             Type type = (Type)malloc(sizeof(Type_));
-            type = getType(root->child->next->child->s_val);
-            /*type->kind = STRUCTVAR;
+            //type = getType(root->child->next->child->s_val);
+            type->kind = STRUCTVAR;
             type->u.structure = (FieldList)malloc(sizeof(FieldList_));
             type->u.structure->name = root->child->next->child->s_val;
             type->u.structure->type = getType(root->child->next->child->s_val);
-            type->u.structure->tail = NULL;*/
-            if(type == NULL)
+            type->u.structure->tail = NULL;
+            if(type->u.structure->type == NULL)
                 serror(stradd("Undefined structure: ", root->child->next->child->s_val), root->child->next->line, 17);
             return type;
         }
