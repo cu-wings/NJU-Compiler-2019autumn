@@ -46,15 +46,12 @@ void ExtDecList(treeNode* root, Type type)
 		{ 	
 			if(root->child->next) //ExtDecList -> VarDec COMMA ExtDecList
 			{
-				//TODO:
 				VarDec(root->child, type, true); 
 				ExtDecList(root->child->next->next,type);
 			}
 			else //ExtDecList -> VarDec
 			{ 
-				//TODO:
-				VarDec(root->child, type, true); 
-			
+				VarDec(root->child, type, true);
 			}
 		}
     }	

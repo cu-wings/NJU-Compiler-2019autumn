@@ -322,9 +322,7 @@ void ExtDef(treeNode* root)
         {
             if(!strcmp(root->child->next->name, "ExtDecList"))  //ExtDef -> Specifier ExtDecList SEMI
             {
-                //TODO: give ExtDecList STRUCTVAR type
-
-                    ExtDecList(root->child->next, type);
+                ExtDecList(root->child->next, type);
             }
             else
             {
