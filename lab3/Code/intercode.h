@@ -4,9 +4,11 @@
 int tempvarNum = 0;     //t1,t2...
 int varNum = 0;         //v1,v2...
 int lableNum = 0;       //LABLE1,LABLE2...
-typedef struct Operand_* Operand;
+
+typedef struct Operand Operand;
 typedef struct InterCode InterCode;
-struct Operand_ {
+typedef struct InterCodes InterCodes;
+struct Operand {
     enum { TEMPVAR, CONSTANT, VARIABLE, FUNCNAME, LABLENUM} kind;
     union 
     {
@@ -29,8 +31,19 @@ struct InterCode
     }u;
 };
 
+struct InterCodes
+{
+    InterCode code;
+    InterCode* next;
+    InterCode* prev;
+};
+
+InterCode* head = NULL;
+InterCode* tail = NULL;
+
+void initTranslate();
 void translateTree(treeNode* treeRoot);
 int new_temp();
 int new_lable();
-InterCode* new_code(int kind, ...);
+void new_code(int kind, ...);
 #endif
