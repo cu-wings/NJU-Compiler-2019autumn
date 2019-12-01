@@ -1,5 +1,14 @@
+int add(int temp[1])
+{
+	if(temp[0] == 10)
+		return 10;
+	else
+		return 0;
+}
 int main()
 {
-	int i;
-	i = 3.7;
+	int a[1];
+	a[0] = 1;
+	write(add(a));
+	return 0;
 }

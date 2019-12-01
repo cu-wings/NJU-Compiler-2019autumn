@@ -1,18 +1,23 @@
 #ifndef COMPLIER_INTERCODE_H_
 #define COMPLIER_INTERCODE_H_
 #include "semantic.h"
-int tempvarNum = 0;     //t1,t2...
-int varNum = 0;         //v1,v2...
-int lableNum = 0;       //LABLE1,LABLE2...
+#define IRDEBUG 0
+int tempvarNum;     //t1,t2...
+int varNum;         //v1,v2...
+int labelNum;       //LABEL1,LABEL2...
 
 typedef struct Operand Operand;
 typedef struct InterCode InterCode;
 typedef struct InterCodes InterCodes;
+typedef struct Operands Operands;
 struct Operand {
-    enum { TEMPVAR, CONSTANT, VARIABLE, FUNCNAME, LABLENUM} kind;
+    enum { TEMPVAR, CONSTANT, VARIABLE, FUNCNAME, LABELNUM } kind;
+    enum { VAL, ADDRESS } type;
     union 
     {
-        int val;
+        struct { int no; char* name; } var; //global var or its address
+        int no;     //No. of tempvar, lable
+        int value;  //const value
         char *funcName;
     }u;
 };
@@ -21,8 +26,8 @@ struct Operand {
 struct InterCode
 {
     enum { ASSIGN, ADD, SUB, MUL, DIVIDE, ADDR, VALUE, VALTOVAL, 
-    LABLE, FUNC, GOTO, IFGOTO, RET, DEC, ARG, CALL, PARAM, READ, WRITE} kind;
-    union 
+    LABEL, FUNC, GOTO, IFGOTO, RET, DEC, ARG, CALL, PARAM, READ, WRITE} kind;
+    union
     {
         struct { Operand left, right; } twoOp;
         struct { Operand op1, op2, result; } threeOp;
@@ -34,16 +39,56 @@ struct InterCode
 struct InterCodes
 {
     InterCode code;
-    InterCode* next;
-    InterCode* prev;
+    InterCodes* next;
+    InterCodes* prev;
 };
 
-InterCode* head = NULL;
-InterCode* tail = NULL;
+struct Operands
+{
+    Operand op;
+    Operands* next;
+    Operands* prev;
+};
+
+InterCodes* codeHead;
+InterCodes* codeTail;
+Operands* opListHead;
+Operands* opListTail;
+InterCodes* expList;
+int irerror;
 
 void initTranslate();
 void translateTree(treeNode* treeRoot);
-int new_temp();
-int new_lable();
+Operand new_op(int kind, int type, ...);
 void new_code(int kind, ...);
+void addOpList(Operand op);
+Operand* findVarOp(char* name);
+int getTypeSize(Type type);
+void addExpList(InterCode code);
+void outputFile();
+void printOp(Operand op, FILE* fp);
+
+void translateExtDefList(treeNode* root);
+void translateExtDef(treeNode* root);
+void translateExtDecList(treeNode* root);
+void translateFunDec(treeNode* root);
+void translateCompSt(treeNode* root);
+Operand translateVarDec(treeNode* root);
+void translateParamDec(treeNode* root);
+void translateVarDecParam(treeNode* root);
+void  translateVarList(treeNode* root);
+void translateDefList(treeNode* root);
+void translateDef(treeNode* root);
+void translateDec(treeNode* root);
+void translateDecList(treeNode* root);
+void translateStmtList(treeNode *root);
+void translateArgs(treeNode *root, FieldList field);
+
+//2
+Operand translateExp(treeNode *root);
+void translateStmt(treeNode *root);
+void translateCond(treeNode *root, Operand *true_label, Operand *false_label);
+void translateCompSt(treeNode* root);
+char *Inverse_operator(char *s);
+
 #endif

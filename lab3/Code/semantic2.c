@@ -18,7 +18,7 @@ Type FindStructureFiled(Type type, char * name, int line)
 
 bool isRightValuesOnly(treeNode* root)
 {
-	if(DEBUG) printf("isRightValueOnly\n");
+	if(SEDEBUG) printf("isRightValueOnly\n");
 	if(!strcmp(root->name, "ID") && root->next == NULL) //ID
 		return false;
 	if(root != NULL && root->next != NULL && root->next->next != NULL)
@@ -39,7 +39,7 @@ bool isRightValuesOnly(treeNode* root)
 
 void ExtDecList(treeNode* root, Type type)
 {
-	if(DEBUG) printf("ExtDecList\n");
+	if(SEDEBUG) printf("ExtDecList\n");
 	if(root)
 	{
 		if(root->child)
@@ -60,7 +60,7 @@ void ExtDecList(treeNode* root, Type type)
 
 void VarDec(treeNode* root, Type type, bool defined)
 {
-	if(DEBUG) printf("VarDec\n");
+	if(SEDEBUG) printf("VarDec\n");
 	if(root)
     	{
 		if(root->child)
@@ -83,7 +83,7 @@ void VarDec(treeNode* root, Type type, bool defined)
 
 void CompSt(treeNode* root, Type ret, bool defined) 
 {	 
-	if(DEBUG) printf("CompSt\n");
+	if(SEDEBUG) printf("CompSt\n");
 	if(root)
     {
 		if(!strcmp(root->child->next->name, "DefList")) //CompSt -> LC DefList StmtList RC
@@ -101,7 +101,7 @@ void CompSt(treeNode* root, Type ret, bool defined)
 
 void DefList(treeNode* root, bool defined)
 {
-	if(DEBUG) printf("DefList\n");
+	if(SEDEBUG) printf("DefList\n");
 	if(root)
     	{
 		if(root->child) // DefList-> Def DefList
@@ -118,7 +118,7 @@ void DefList(treeNode* root, bool defined)
 
 void Def(treeNode* root, bool defined)
 {
-	if(DEBUG) printf("Def\n");
+	if(SEDEBUG) printf("Def\n");
 	if(root)
     	{
 		if(root->child) //Def -> Specifier DecList SEMI
@@ -132,7 +132,7 @@ void Def(treeNode* root, bool defined)
 }
 
 void DecList(treeNode *root, Type type,  bool defined) {
-	if(DEBUG) printf("DecList\n");
+	if(SEDEBUG) printf("DecList\n");
 	if(root)
     	{
 		if(root->child) 
@@ -151,7 +151,7 @@ void DecList(treeNode *root, Type type,  bool defined) {
 }
 
 void Dec(treeNode *root, Type type,  bool defined) {
-	if(DEBUG) printf("Dec\n");
+	if(SEDEBUG) printf("Dec\n");
 	if(root)
     	{
 		if(root->child) 
@@ -171,9 +171,9 @@ void Dec(treeNode *root, Type type,  bool defined) {
 
 void StmtList(treeNode* root, Type ret)
 {
-	if(DEBUG) printf("StmtList\n");
+	if(SEDEBUG) printf("StmtList\n");
 	if(root)
-    	{
+    {
 		if(root->child) 
 		{
 			if(!strcmp(root->child->name, "Stmt")) //StmtList -> Stmt StmtList
@@ -190,7 +190,7 @@ void StmtList(treeNode* root, Type ret)
 
 void Stmt(treeNode* root, Type ret)
 {
-	if(DEBUG) printf("Stmt\n");
+	if(SEDEBUG) printf("Stmt\n");
 	if(root)
     	{
 		if(root->child)
@@ -226,7 +226,7 @@ void Stmt(treeNode* root, Type ret)
 
 Type Exp(treeNode* root)
 {
-	if(DEBUG) printf("Exp\n");
+	if(SEDEBUG) printf("Exp\n");
 	if(root)
     	{
 		if(root->child)
@@ -372,7 +372,7 @@ Type Exp(treeNode* root)
 
 void Args(treeNode* root, Type type)
 {
-	if(DEBUG) printf("Args\n");
+	if(SEDEBUG) printf("Args\n");
 	if(root)
     	{
 		if(strcmp(root->name, "Args"))

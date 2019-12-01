@@ -14,22 +14,30 @@ void initHarshTable()
     //lab3 add: read and write
     Type ret = (Type)malloc(sizeof(Type_));
     ret->kind = BASIC;
-    ret->u.basic = 1;
+    ret->u.basic = 0;
     Type func = (Type)malloc(sizeof(Type_));
     func->kind = FUNCTION;
     func->u.function.param = NULL;
     func->u.function.ret = ret;
     addSymbol("read", func, 0, true);
 
+    Type _write_param_ = (Type)malloc(sizeof(Type_));
+    _write_param_->kind = BASIC;
+    _write_param_->u.basic = 0;
+    addSymbol("_write_param_", _write_param_, 0, true);
+
     Type func2 = (Type)malloc(sizeof(Type_));
     func2->kind = FUNCTION;
     FieldList param = (FieldList)malloc(sizeof(FieldList_));
-    param->name = NULL;
+    param->name = (char*)malloc(sizeof(char)*7);
+    param->name = "_write_param_";
     param->tail = NULL;
     param->type = ret;
     func2->u.function.param = param;
     func2->u.function.ret = ret;
-    addSymbol("wirte", func2, 0, true);
+    addSymbol("write", func2, 0, true);
+    //Type find = getType("write");
+    //printf("%d %d\n", find->kind, find->u.function.ret->kind);
 }
 
 int symbolLine(char* name)
@@ -79,7 +87,7 @@ char* stradd(char* str1, char* str2)
     char* msg = (char*)malloc(strlen(str1) + strlen(str2) + 1);
     strcpy(msg, str1);
     strcat(msg, str2);
-    if(DEBUG) printf("%s\n",str2);
+    if(SEDEBUG) printf("%s\n",str2);
     return msg;
 }
 
@@ -164,7 +172,7 @@ bool sameType(Type t1, Type t2)
 void addSymbol(char* name, Type type, int line, bool defined)
 {
     unsigned int harshCode = harsh(name);
-    if(DEBUG) printf("%d\n", harshCode);
+    if(SEDEBUG) printf("%d\n", harshCode);
     if(!type)
         return;
     if(symbolTable[harshCode] == NULL)  //the first place is empty pointer
@@ -266,7 +274,7 @@ Type getType(char* name)
 {
     unsigned int harshCode = harsh(name);
     SymbolTable temp = symbolTable[harshCode];
-    if(DEBUG) if(temp) printf("%s\n",temp->name);
+    if(SEDEBUG) if(temp) printf("%s\n",temp->name);
     bool flag = false;
     while(temp != NULL)
     {
@@ -279,6 +287,7 @@ Type getType(char* name)
 
 void serror(char* msg, int line, int errorType)
 {
+    serrorState = 1;
     printf("Error type %d at Line %d: %s.\n", errorType, line, msg);
 }
 
@@ -286,6 +295,7 @@ void tranverseTree(treeNode* treeRoot)
 {
     initHarshTable();
     //treeRoot->child->name
+    serrorState = 0;
     if(treeRoot != NULL)
     {
         if(treeRoot->child) //Program ->ExtDefList
@@ -317,7 +327,7 @@ void CheckFunc()
 
 void ExtDefList(treeNode* root)
 {
-    if(DEBUG) printf("ExtDefList\n");
+    if(SEDEBUG) printf("ExtDefList\n");
     if(root)
     {
         if(root->child)
@@ -334,7 +344,7 @@ void ExtDefList(treeNode* root)
 
 void ExtDef(treeNode* root)
 {
-    if(DEBUG) printf("ExtDef\n");
+    if(SEDEBUG) printf("ExtDef\n");
     if(root)
     {
         Type type = Specifier(root->child);
@@ -367,7 +377,7 @@ void ExtDef(treeNode* root)
 
 Type Specifier(treeNode* root)
 {
-    if(DEBUG) printf("Specifier\n");
+    if(SEDEBUG) printf("Specifier\n");
     if(root)
     {
         if(!strcmp(root->child->name, "TYPE"))  //Specifier -> TYPE
@@ -390,7 +400,7 @@ Type Specifier(treeNode* root)
 
 void FunDec(treeNode* root, Type ret, bool defined)
 {
-    if(DEBUG) printf("FunDec\n");
+    if(SEDEBUG) printf("FunDec\n");
     if(root)
     {
         Type func = (Type)malloc(sizeof(Type_));
@@ -404,7 +414,7 @@ void FunDec(treeNode* root, Type ret, bool defined)
         {
             func->u.function.param = NULL;
         }
-        if(DEBUG) printf("%d\n",defined);
+        if(SEDEBUG) printf("%d\n",defined);
         if(defined)
         {
             FieldList temp = func->u.function.param;
@@ -455,16 +465,16 @@ FieldList ParamDec(treeNode* root, Type headType)
 
 Type StructSpecifier(treeNode* root)
 {
-    if(DEBUG) printf("StructSpecifier\n");
-    //if(DEBUG) printf("%s\n", root->child->next->name);
-    //if(DEBUG) if(root != NULL) printf("NULL!\n");
+    if(SEDEBUG) printf("StructSpecifier\n");
+    //if(SEDEBUG) printf("%s\n", root->child->next->name);
+    //if(SEDEBUG) if(root != NULL) printf("NULL!\n");
     if(root)
     {
         //strcmp(root->child->next->name, "OptTag");
-        //if(DEBUG) if(root) printf("NOT NULL!\n");
+        //if(SEDEBUG) if(root) printf("NOT NULL!\n");
         if(!strcmp(root->child->next->name, "OptTag"))
         {
-            if(DEBUG) printf("OptTag\n");
+            if(SEDEBUG) printf("OptTag\n");
             Type type = (Type)malloc(sizeof(Type_));
             type->kind = STRUCTURE;
             type->u.structure = NULL;
@@ -474,7 +484,7 @@ Type StructSpecifier(treeNode* root)
                 //name = (char*)malloc(sizeof(root->child->next->child->s_val) + 1);
                 //strcpy(name, root->child->next->child->s_val);
                 name = root->child->next->child->s_val;
-                if(DEBUG) printf("%s\n", name);
+                if(SEDEBUG) printf("%s\n", name);
             }
             DefList_Structure(root->child->next->next->next, type);
             addSymbol(name, type, root->line, true);
@@ -488,8 +498,8 @@ Type StructSpecifier(treeNode* root)
         }
         else        //StructSpecifier -> STRUCT Tag
         {
-            if(DEBUG) printf("Tag\n");
-            //if(DEBUG) printf("%s\n",root->child->next->child->s_val);
+            if(SEDEBUG) printf("Tag\n");
+            //if(SEDEBUG) printf("%s\n",root->child->next->child->s_val);
             Type type = (Type)malloc(sizeof(Type_));
             //type = getType(root->child->next->child->s_val);
             type->kind = STRUCTVAR;
@@ -508,7 +518,7 @@ Type StructSpecifier(treeNode* root)
 
 FieldList DefList_Structure(treeNode* root, Type headType)
 {
-    if(DEBUG) printf("DefList\n");
+    if(SEDEBUG) printf("DefList\n");
     if(root)
     {
         FieldList temp = Def_Structure(root->child, headType);
@@ -529,7 +539,7 @@ FieldList DefList_Structure(treeNode* root, Type headType)
 
 FieldList Def_Structure(treeNode* root, Type headType)
 {
-    if(DEBUG) printf("Def\n");
+    if(SEDEBUG) printf("Def\n");
     if(root)
     {
         FieldList temp; //= (FieldList)malloc(sizeof(FieldList_));
@@ -543,7 +553,7 @@ FieldList Def_Structure(treeNode* root, Type headType)
 
 FieldList DecList_Structure(treeNode* root, Type type, Type headType)
 {
-    if(DEBUG) printf("DecList_Structure\n");
+    if(SEDEBUG) printf("DecList_Structure\n");
     if(root)
     {
         FieldList temp; // = (FieldList)malloc(sizeof(FieldList_));
@@ -605,7 +615,7 @@ FieldList VarDec_Structure(treeNode* root, Type type, Type headType)
             currentNode = currentNode->child;
         }
         if(headType->kind == FUNCTION)
-            addSymbol(temp->name, type, root->line, false); // the param of function are defined in FunDec
+            addSymbol(temp->name, temp->type, root->line, false); // the param of function are defined in FunDec
         else
         {
             FieldList tmp = headType->u.structure;
@@ -623,7 +633,7 @@ FieldList VarDec_Structure(treeNode* root, Type type, Type headType)
                 tmp = tmp->tail;
             }
             if(flag)
-                addSymbol(temp->name, type, root->line, true);  // the field of structure are defined here
+                addSymbol(temp->name, temp->type, root->line, true);  // the field of structure are defined here
             if(headType->u.structure == NULL)
                 headType->u.structure = temp;
         }
