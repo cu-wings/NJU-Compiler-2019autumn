@@ -1,21 +1,20 @@
-struct Operands
+int out(int a,int b,int c,int d, int e)
 {
-	int o1;
-	int o2;
-};
-
-int add(struct Operands temp)
-{
-	return (temp.o1 + temp.o2);
+	write(a);
+	write(b);
+	write(c);
+	write(d);
+	write(e);
+	return 1;
 }
 
 int main()
 {
-	int n;
-	struct Operands op;
-	op.o1 =1;
-	op.o2 = 2;
-	n = add(op);
-	write(n);
+	int n1 = 1;
+	int n2 = 2;
+	int n3 = 3;
+	int n4 = 4;
+	int n5 = 5;
+	out(n1,n2,n3,n4,n5);
 	return 0;
 }

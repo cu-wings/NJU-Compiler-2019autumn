@@ -1,0 +1,22 @@
+funcVar:
+block:
+op = v1,offset:8 use: 
+op = t1,offset:12 use: 
+op = t2,offset:16 use: 
+op = t3,offset:20 use: 
+op = t4,offset:24 use: 
+op = t6,offset:28 use: 
+op = t7,offset:32 use: 
+op = t9,offset:36 use: 
+op = t10,offset:40 use: 
+
+block:
+op = v1,offset:8 use: 2 4 7 10 13 
+op = t1,offset:12 use: 3 4 
+op = t2,offset:16 use: 4 5 
+op = t3,offset:20 use: 6 7 
+op = t4,offset:24 use: 7 8 
+op = t6,offset:28 use: 9 10 
+op = t7,offset:32 use: 10 11 
+op = t9,offset:36 use: 12 13 
+op = t10,offset:40 use: 13 14 

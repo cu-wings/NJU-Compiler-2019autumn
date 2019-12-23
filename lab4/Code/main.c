@@ -2,6 +2,7 @@
 #include "syntax.tab.h"
 #include "semantic.h"
 #include "intercode.h"
+#include "asmcode.h"
 extern FILE* yyin;
 //extern int yylex();
 extern int errorState;
@@ -33,7 +34,11 @@ int main(int argc, char** argv)
 		if(DEBUG) PrintTree(treeRoot,0);
 		tranverseTree(treeRoot);
 		if(!serrorState)
+		{
 			translateTree(treeRoot);
+			translateAsm(argv[2]);
+		}
 	}
+	fclose(f);
 	return 0;
 }
