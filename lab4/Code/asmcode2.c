@@ -53,61 +53,91 @@ void loadRegsA(FILE* fp, int arg_num)
     }
 }
 
-void clearArray(FILE* fp, BasicBlock* currentBlock, InterCodes* temp, char* reg1, char* reg2, char* reg3)
+void getCodeRegs(FILE* fp, BasicBlock* currentBlock, InterCodes* temp, 
+char** reg1, char** reg2, char** reg3, char** leftReg, char** rightReg1, char** rightReg2, int line)
 {
     InterCode code = temp->code;
     switch (code.kind)//ASSIGN, ADD, SUB, MUL, DIVIDE, ADDR, VALUE, VALTOVAL, LABEL, FUNC, GOTO, IFGOTO, RET, DEC, ARG, CALL, PARAM, READ, WRITE
     {
     case ASSIGN:
-        if(code.u.twoOp.left.type == ADDRESS)
+        *reg1 = getReg(code.u.twoOp.left, currentBlock, fp, line, 1);
+        if(code.u.twoOp.right.kind != CONSTANT)
         {
-            fprintf(fp, "  sw $%s, %d\n", reg1, code.u.twoOp.right.u.value);
+            *reg2 = getReg(code.u.twoOp.right, currentBlock, fp, line, 2);
         }
-        
+        *leftReg = *reg1;
+        *rightReg1 = *reg2;
+        if(code.u.twoOp.left.type == ADDRESS && code.u.twoOp.left.kind == TEMPVAR)
+            *leftReg = regChar(v1);
+        if(code.u.twoOp.right.type == ADDRESS && code.u.twoOp.right.kind == TEMPVAR)
+            *rightReg1 = regChar(t8);
         break;
-    case ADD:
+    case ADD: case SUB:
+        *reg1 = getReg(code.u.threeOp.result, currentBlock, fp, line, 1);
+        if(code.u.threeOp.op1.kind != CONSTANT && code.u.threeOp.op2.kind != CONSTANT)
+        {
+            *reg2 = getReg(code.u.threeOp.op1, currentBlock, fp, line, 2);
+            *reg3 = getReg(code.u.threeOp.op2, currentBlock, fp, line, 3);
+        }
+        else if(code.u.threeOp.op1.kind == CONSTANT && code.u.threeOp.op2.kind != CONSTANT)
+        {
+            *reg3 = getReg(code.u.threeOp.op2, currentBlock, fp, line, 3);
+        }
+        else if(code.u.threeOp.op1.kind != CONSTANT && code.u.threeOp.op2.kind == CONSTANT)
+        {
+            *reg2 = getReg(code.u.threeOp.op1, currentBlock, fp, line, 2);
+        }
+        else
+        {
+            
+        }
+        *leftReg = *reg1;
+        *rightReg1 = *reg2;
+        *rightReg2 = *reg3;
+        if(code.u.threeOp.result.type == ADDRESS && code.u.threeOp.result.kind == TEMPVAR)
+            *leftReg = regChar(v1);
+        if(code.u.threeOp.op1.type == ADDRESS && code.u.threeOp.op1.kind == TEMPVAR)
+            *rightReg1 = regChar(t8);
+        if(code.u.threeOp.op2.type == ADDRESS && code.u.threeOp.op2.kind == TEMPVAR)
+            *rightReg2 = regChar(t9);
         break;
-    case SUB:
-        
+    case MUL: case DIVIDE:
+        *reg1 = getReg(code.u.threeOp.result, currentBlock, fp, line, 1);
+        *reg2 = getReg(code.u.threeOp.op1, currentBlock, fp, line, 2);
+        *reg3 = getReg(code.u.threeOp.op2, currentBlock, fp, line, 3);
+        *leftReg = *reg1;
+        *rightReg1 = *reg2;
+        *rightReg2 = *reg3;
+        if(code.u.threeOp.result.type == ADDRESS && code.u.threeOp.result.kind == TEMPVAR)
+            *leftReg = regChar(v1);
+        if(code.u.threeOp.op1.type == ADDRESS && code.u.threeOp.op1.kind == TEMPVAR)
+            *rightReg1 = regChar(t8);
+        if(code.u.threeOp.op2.type == ADDRESS && code.u.threeOp.op2.kind == TEMPVAR)
+            *rightReg2 = regChar(t9);
         break;
-    case MUL:
-        break;
-    case DIVIDE:
-        
-        break;
-    case GOTO:
-
-        break;
-    case CALL:
-        
-        break;
-    case RET:
+    case RET: case ARG: case WRITE:
+        *reg2 = getReg(code.u.oneOp.op, currentBlock, fp, line, 2);
+        *rightReg1 = *reg2;
+        if(code.u.oneOp.op.type == ADDRESS && code.u.oneOp.op.kind == TEMPVAR)
+            *rightReg1 = regChar(t8);
         break;
     case IFGOTO:
-        
+        *reg2 = getReg(code.u.ifGoto.op1, currentBlock, fp, line, 2);
+        *reg3 = getReg(code.u.ifGoto.op2, currentBlock, fp, line, 3);
+        *rightReg1 = *reg2;
+        *rightReg2 = *reg3;
+        if(code.u.ifGoto.op1.type == ADDRESS && code.u.ifGoto.op1.kind == TEMPVAR)
+            *rightReg1 = regChar(t8);
+        if(code.u.ifGoto.op2.type == ADDRESS && code.u.ifGoto.op2.kind == TEMPVAR)
+            *rightReg2 = regChar(t9);
         break;
-    case VALTOVAL:
+    case VALTOVAL: case LABEL: case FUNC: case DEC: case CALL:
         break;
-    case LABEL:
-        
-        break;
-    case FUNC:
-        
-        break;
-    case ARG:
-        
-        break;      
-    case READ:
-        
-        break;
-    case WRITE:
-        
-        break;
-    case DEC:
-        
-        break;
-    case PARAM:
-        
+    case PARAM: case READ:
+        *reg1 = getReg(code.u.oneOp.op, currentBlock, fp, line, 1);
+        *leftReg = *reg1;
+        if(code.u.oneOp.op.type == ADDRESS && code.u.oneOp.op.kind == TEMPVAR)
+            *leftReg = regChar(v1);
         break;
     default:
         break;
@@ -157,78 +187,88 @@ void translateAsm(char* outputName)
                 if(ASMDEBUG) testOut(temp, testFp);
                 InterCode code = temp->code;
                 char *reg1, *reg2, *reg3;
+                char *leftReg, *rightReg1, *rightReg2;
+                getCodeRegs(fp, currentBlock, temp, &reg1, &reg2, &reg3, &leftReg, &rightReg1, &rightReg2, line);
+                
                 switch (code.kind)//ASSIGN, ADD, SUB, MUL, DIVIDE, ADDR, VALUE, VALTOVAL, LABEL, FUNC, GOTO, IFGOTO, RET, DEC, ARG, CALL, PARAM, READ, WRITE
                 {
                 case ASSIGN:
-                    reg1 = getReg(code.u.twoOp.left, currentBlock, fp, line);
-                    char* leftReg = reg1;
-                    if(code.u.twoOp.left.type == ADDRESS && code.u.twoOp.left.kind == TEMPVAR)
-                        leftReg = regChar(v1);
-                    if(code.u.twoOp.right.kind == CONSTANT)
-                    {
+                    if(code.u.twoOp.right.kind == CONSTANT)     // x := k
                         fprintf(fp, "  li $%s, %d\n", leftReg, code.u.twoOp.right.u.value);
-                    }
-                    else
-                    {
-                        fprintf(fp, "  move $%s, $%s\n", leftReg, getReg(code.u.twoOp.right,currentBlock,fp, line));
-                    }
+                    else    // x := y or x := *y
+                        fprintf(fp, "  move $%s, $%s\n", leftReg, rightReg1);
+                    // *x := y , need to save
                     if(code.u.twoOp.left.type == ADDRESS && code.u.twoOp.left.kind == TEMPVAR)
                         fprintf(fp, "  sw $%s, 0($%s)\n", leftReg, reg1);
+                    // x := *y
+                    //no need to save
                     break;
                 case ADD:
+                    //reg1 = getReg(code.u.threeOp.result, currentBlock, fp, line);
                     if(code.u.threeOp.op1.kind != CONSTANT && code.u.threeOp.op2.kind != CONSTANT)
-                    {
-                        fprintf(fp, "  add $%s, $%s, $%s\n", getReg(code.u.threeOp.result, currentBlock, fp, line), getReg(code.u.threeOp.op1, currentBlock, fp, line), getReg(code.u.threeOp.op2, currentBlock, fp, line));
-                    }
+                        fprintf(fp, "  add $%s, $%s, $%s\n", leftReg, rightReg1, rightReg2);
                     else if(code.u.threeOp.op1.kind == CONSTANT && code.u.threeOp.op2.kind != CONSTANT)
-                    {
-                        fprintf(fp, "  addi $%s, %d, $%s\n", getReg(code.u.threeOp.result, currentBlock, fp, line), code.u.threeOp.op1.u.value, getReg(code.u.threeOp.op2, currentBlock, fp, line));
-                    }
+                        fprintf(fp, "  addi $%s, $%s, %d\n", leftReg, rightReg2, code.u.threeOp.op1.u.value);
                     else if(code.u.threeOp.op1.kind != CONSTANT && code.u.threeOp.op2.kind == CONSTANT)
                     {
-                        fprintf(fp, "  addi $%s, $%s, %d\n", getReg(code.u.threeOp.result, currentBlock, fp, line), getReg(code.u.threeOp.op1, currentBlock, fp, line), code.u.threeOp.op2.u.value);
+                        fprintf(fp, "  addi $%s, $%s, %d\n", leftReg, rightReg1, code.u.threeOp.op2.u.value);
                     }
                     else
                     {
-                        fprintf(fp, "  addi $%s, %d, %d\n", getReg(code.u.threeOp.result, currentBlock, fp, line), code.u.threeOp.op1.u.value, code.u.threeOp.op2.u.value);
-                    }     
+                        rightReg1 = getReg(code.u.threeOp.op1, currentBlock, fp, line, 2);
+                        fprintf(fp, "  addi $%s, $%s, %d\n", leftReg, rightReg1, code.u.threeOp.op2.u.value);
+                        regs[regInt(rightReg1)] = false;
+                    }
+                    if(code.u.threeOp.result.type == ADDRESS && code.u.threeOp.result.kind == TEMPVAR)
+                        fprintf(fp, "  sw $%s, 0($%s)\n", leftReg, reg1);
                     break;
                 case SUB:
                     if(code.u.threeOp.op1.kind != CONSTANT && code.u.threeOp.op2.kind != CONSTANT)
                     {
-                        fprintf(fp, "  sub $%s, $%s, $%s\n", getReg(code.u.threeOp.result, currentBlock, fp, line), getReg(code.u.threeOp.op1, currentBlock, fp, line), getReg(code.u.threeOp.op2, currentBlock, fp, line));
+                        fprintf(fp, "  sub $%s, $%s, $%s\n", leftReg, rightReg1, rightReg2);
                     }
                     else if(code.u.threeOp.op1.kind == CONSTANT && code.u.threeOp.op2.kind != CONSTANT)
                     {
-                        fprintf(fp, "  sub $%s, %d, $%s\n", getReg(code.u.threeOp.result, currentBlock, fp, line), code.u.threeOp.op1.u.value, getReg(code.u.threeOp.op2, currentBlock, fp, line));
+                        rightReg1 = getReg(code.u.threeOp.op1, currentBlock, fp, line, 2);
+                        fprintf(fp, "  sub $%s, $%s, $%s\n", leftReg, rightReg1, rightReg2);
+                        regs[regInt(rightReg1)] = false;
                     }
                     else if(code.u.threeOp.op1.kind != CONSTANT && code.u.threeOp.op2.kind == CONSTANT)
                     {
-                        fprintf(fp, "  addi $%s, $%s, %d\n", getReg(code.u.threeOp.result, currentBlock, fp, line), getReg(code.u.threeOp.op1, currentBlock, fp, line), -code.u.threeOp.op2.u.value);
+                        fprintf(fp, "  addi $%s, $%s, %d\n", leftReg, rightReg1, -code.u.threeOp.op2.u.value);
                     }
                     else
                     {
-                        fprintf(fp, "  addi $%s, %d, %d\n", getReg(code.u.threeOp.result, currentBlock, fp, line), code.u.threeOp.op1.u.value, -code.u.threeOp.op2.u.value);
-                    }     
+                        rightReg1 = getReg(code.u.threeOp.op1, currentBlock, fp, line, 2);
+                        fprintf(fp, "  addi $%s, $%s, %d\n", leftReg, rightReg1, -code.u.threeOp.op2.u.value);
+                        regs[regInt(rightReg1)] = false;
+
+                    }
+                    if(code.u.threeOp.result.type == ADDRESS && code.u.threeOp.result.kind == TEMPVAR)
+                        fprintf(fp, "  sw $%s, 0($%s)\n", leftReg, reg1);
                     break;
                 case MUL:
-                    reg1 = getReg(code.u.threeOp.op1, currentBlock, fp, line);
-                    reg2 = getReg(code.u.threeOp.op2, currentBlock, fp, line);
-                    reg3 = getReg(code.u.threeOp.result, currentBlock, fp, line);
-                    fprintf(fp, "  mul $%s, $%s, $%s\n", reg3 , reg1, reg2);
-                    if(code.u.threeOp.op1.kind == CONSTANT) regs[regInt(reg1)] = false;
-                    if(code.u.threeOp.op2.kind == CONSTANT) regs[regInt(reg2)] = false;
-                    if(code.u.threeOp.result.kind == CONSTANT) regs[regInt(reg3)] = false;
+                    //reg1 = getReg(code.u.threeOp.op1, currentBlock, fp, line);
+                    //reg2 = getReg(code.u.threeOp.op2, currentBlock, fp, line);
+                    //reg3 = getReg(code.u.threeOp.result, currentBlock, fp, line);
+                    fprintf(fp, "  mul $%s, $%s, $%s\n", leftReg , rightReg1, rightReg2);
+                    if(code.u.threeOp.op1.kind == CONSTANT) regs[regInt(rightReg1)] = false;
+                    if(code.u.threeOp.op2.kind == CONSTANT) regs[regInt(rightReg2)] = false;
+                    if(code.u.threeOp.result.kind == CONSTANT) regs[regInt(leftReg)] = false;
+                    if(code.u.threeOp.result.type == ADDRESS && code.u.threeOp.result.kind == TEMPVAR)
+                        fprintf(fp, "  sw $%s, 0($%s)\n", leftReg, reg1);
                     break;
                 case DIVIDE:
-                    reg1 = getReg(code.u.threeOp.op1, currentBlock, fp, line);
-                    reg2 = getReg(code.u.threeOp.op2, currentBlock, fp, line);
-                    reg3 = getReg(code.u.threeOp.result, currentBlock, fp, line);
-                    fprintf(fp, "  div $%s, $%s\n", reg1, reg2);
-                    fprintf(fp, "  mflo $%s\n", reg3);
-                    if(code.u.threeOp.op1.kind == CONSTANT) regs[regInt(reg1)] = false;
-                    if(code.u.threeOp.op2.kind == CONSTANT) regs[regInt(reg2)] = false;
-                    if(code.u.threeOp.result.kind == CONSTANT) regs[regInt(reg3)] = false;
+                    //reg1 = getReg(code.u.threeOp.op1, currentBlock, fp, line);
+                    //reg2 = getReg(code.u.threeOp.op2, currentBlock, fp, line);
+                    //reg3 = getReg(code.u.threeOp.result, currentBlock, fp, line);
+                    fprintf(fp, "  div $%s, $%s\n", rightReg1, rightReg2);
+                    fprintf(fp, "  mflo $%s\n", leftReg);
+                    if(code.u.threeOp.op1.kind == CONSTANT) regs[regInt(rightReg1)] = false;
+                    if(code.u.threeOp.op2.kind == CONSTANT) regs[regInt(rightReg2)] = false;
+                    if(code.u.threeOp.result.kind == CONSTANT) regs[regInt(leftReg)] = false;
+                    if(code.u.threeOp.result.type == ADDRESS && code.u.threeOp.result.kind == TEMPVAR)
+                        fprintf(fp, "  sw $%s, 0($%s)\n", leftReg, reg1);
                     break;
                 case GOTO:
                     fprintf(fp, "  #saveAll:\n");
@@ -247,21 +287,26 @@ void translateAsm(char* outputName)
                         fprintf(fp, "  jal %s_\n", code.u.twoOp.right.u.funcName);
                     else
                         fprintf(fp, "  jal %s\n", code.u.twoOp.right.u.funcName);                        
-                    fprintf(fp, "  move $%s, $v0\n", getReg(code.u.twoOp.left, currentBlock, fp, line));
+                    reg1 = getReg(code.u.twoOp.left, currentBlock, fp, line, 1);
+                    leftReg = reg1;
+                    if(code.u.twoOp.left.type == ADDRESS && code.u.twoOp.left.kind == TEMPVAR)
+                        leftReg = regChar(v1);
+                    fprintf(fp, "  move $%s, $v0\n", leftReg);
+                    if(code.u.twoOp.left.type == ADDRESS && code.u.twoOp.left.kind == TEMPVAR)
+                        fprintf(fp, "  sw $%s, 0($%s)\n", leftReg, reg1);
                     //loadRegsA(fp, arg_num);
                     arg_num = 0;
                     break;
                 case RET:
-                    save = false;
-                    fprintf(fp, "  move $v0, $%s\n", getReg(code.u.oneOp.op, currentBlock, fp, line));
+                    //save = false;
+                    fprintf(fp, "  move $v0, $%s\n", rightReg1);
+                    if(code.u.oneOp.op.kind == CONSTANT) regs[regInt(rightReg1)] = false;
                     fprintf(fp, "  lw $ra, 4($fp)\n");
                     fprintf(fp, "  lw $fp, 0($fp)\n");
                     fprintf(fp, "  addi $sp, $sp, %d\n", currentFunc->offset + 8);
                     fprintf(fp, "  jr $ra\n");
                     break;
                 case IFGOTO:
-                    reg1 = getReg(code.u.ifGoto.op1, currentBlock, fp, line);
-                    reg2 = getReg(code.u.ifGoto.op2, currentBlock, fp, line);
                     fprintf(fp, "  #saveAll:\n");
                     saveAll(currentBlock, fp);
                     fprintf(fp, "  #endsave\n");
@@ -286,20 +331,12 @@ void translateAsm(char* outputName)
                         fprintf(fp, "  bge ");
                     else if(!strcmp(code.u.ifGoto.relop,"<="))
                         fprintf(fp, "  ble ");
-                    fprintf(fp, "$%s, $%s, label%d\n", reg1, reg2, code.u.ifGoto.op3.u.no);
-                    if(code.u.ifGoto.op1.kind == CONSTANT) regs[regInt(reg1)] = false;
-                    if(code.u.ifGoto.op2.kind == CONSTANT) regs[regInt(reg2)] = false;
+                    fprintf(fp, "$%s, $%s, label%d\n", rightReg1, rightReg2, code.u.ifGoto.op3.u.no);
+                    if(code.u.ifGoto.op1.kind == CONSTANT) regs[regInt(rightReg1)] = false;
+                    if(code.u.ifGoto.op2.kind == CONSTANT) regs[regInt(rightReg2)] = false;
                     fprintf(fp, "\n");
                     break;
                 case VALTOVAL:
-                    if(code.u.twoOp.left.type == ADDRESS)
-                    {
-                        fprintf(fp, "  sw $%s, 0($%s)\n", getReg(code.u.twoOp.right, currentBlock, fp, line), getReg(code.u.twoOp.left, currentBlock, fp, line));
-                    }
-                    else if(code.u.twoOp.right.type == ADDRESS)
-                    {
-                        fprintf(fp, "  lw $%s, 0($%s)\n", getReg(code.u.twoOp.left, currentBlock, fp, line), getReg(code.u.twoOp.right, currentBlock, fp, line));
-                    }
                     break;
                 case LABEL:
                     fprintf(fp, "label%d:\n", code.u.oneOp.op.u.no);
@@ -354,27 +391,17 @@ void translateAsm(char* outputName)
                     break;
                 case ARG:
                     arg_num++;
+                    //reg1 = getReg(code.u.oneOp.op, currentBlock, fp, line, 1);
                     if(arg_num > 0 && arg_num <= 4)
                     {
-                        reg1 = getReg(code.u.oneOp.op, currentBlock, fp, line);
-                        //if(code.u.oneOp.op.kind == TEMPVAR)
-                        fprintf(fp, "  move $a%d, $%s\n", arg_num - 1, reg1);
-                        if(code.u.oneOp.op.kind == CONSTANT) regs[regInt(reg1)] = false;
-                        //if(code.u.oneOp.op.kind == VARIABLE)
-                            //fprintf(fp, "  move $a%d, $v%d\n", arg_num, code.u.oneOp.op.u.var.no);
+                        fprintf(fp, "  move $a%d, $%s\n", arg_num - 1, rightReg1);
                     }
                     else if(arg_num > 4)
                     {
                         fprintf(fp, "  addi $sp, $sp, -4\n");
-                        //if(code.u.oneOp.op.kind == TEMPVAR)
-                        reg1 = getReg(code.u.oneOp.op, currentBlock, fp, line);
-                        fprintf(fp, "  sw $%s, 0($sp)\n", reg1);
-                        if(code.u.oneOp.op.kind == CONSTANT) regs[regInt(reg1)] = false;
-                        //if(code.u.oneOp.op.kind == VARIABLE)
-                            //fprintf(fp, "  sw $v%d, 0($sp)\n", code.u.oneOp.op.u.var.no);
-                    }
-                    //if(temp->next->code.kind != ARG)
-                        
+                        fprintf(fp, "  sw $%s, 0($sp)\n", rightReg1);
+                    }  
+                    if(code.u.oneOp.op.kind == CONSTANT) regs[regInt(rightReg1)] = false;
                     break;      
                 case READ:
                     fprintf(fp, "  addi $sp, $sp, -4\n");
@@ -382,15 +409,17 @@ void translateAsm(char* outputName)
                     fprintf(fp, "  jal read\n");
                     fprintf(fp, "  lw $ra, 0($sp)\n");
                     fprintf(fp, "  addi $sp, $sp, 4\n");
-                    reg1 = getReg(code.u.oneOp.op, currentBlock, fp, line);
-                    fprintf(fp, "  move $%s, $v0\n", reg1);
-                    if(code.u.oneOp.op.kind == CONSTANT) regs[regInt(reg1)] = false;
+                    //reg1 = getReg(code.u.oneOp.op, currentBlock, fp, line, 1);
+                    fprintf(fp, "  move $%s, $v0\n", leftReg);
+                    if(code.u.oneOp.op.type == ADDRESS && code.u.oneOp.op.kind == TEMPVAR)
+                        fprintf(fp, "  sw $%s, 0($%s)\n", leftReg, reg1);
+                    if(code.u.oneOp.op.kind == CONSTANT) regs[regInt(leftReg)] = false;
                     fprintf(fp, "\n");
                     break;
                 case WRITE:
-                    reg1 = getReg(code.u.oneOp.op, currentBlock, fp, line);
-                    fprintf(fp, "  move $a0, $%s\n", reg1);
-                    if(code.u.oneOp.op.kind == CONSTANT) regs[regInt(reg1)] = false;
+                    //reg1 = getReg(code.u.oneOp.op, currentBlock, fp, line, 1);
+                    fprintf(fp, "  move $a0, $%s\n", rightReg1);
+                    if(code.u.oneOp.op.kind == CONSTANT) regs[regInt(rightReg1)] = false;
                     fprintf(fp, "  addi $sp, $sp, -4\n");
                     fprintf(fp, "  sw $ra, 0($sp)\n");
                     fprintf(fp, "  jal write\n");
@@ -402,25 +431,20 @@ void translateAsm(char* outputName)
                     
                     break;
                 case PARAM:
-                    
-                    fprintf(fp, "  #PARAM:\n");
+                    //fprintf(fp, "  #PARAM:\n");
+                    //reg1 = getReg(code.u.oneOp.op, currentBlock, fp, line, 1);
                     if(arg_num > 0 && arg_num <= 4)
                     {
-                        reg1 = getReg(code.u.oneOp.op, currentBlock, fp, line);
-                        fprintf(fp, "  move $%s, $a%d\n", reg1, arg_num - 1);
-                        if(code.u.oneOp.op.kind == CONSTANT) regs[regInt(reg1)] = false;
+                        fprintf(fp, "  move $%s, $a%d\n", leftReg, arg_num - 1);
                     }
                     else if(arg_num > 4)
                     {
-                        //fprintf(fp, "  addi $sp, $sp, -4\n");
-                        reg1 = getReg(code.u.oneOp.op, currentBlock, fp, line);
-                        fprintf(fp, "  lw $%s, %d($fp)\n", reg1, 4*(arg_num - 4) + 4);
-                        if(code.u.oneOp.op.kind == CONSTANT) regs[regInt(reg1)] = false;
+                        //fprintf(fp, "  addi $sp, $sp, -4\n");   
+                        fprintf(fp, "  lw $%s, %d($fp)\n", leftReg, 4*(arg_num - 4) + 4);
                     }
+                    if(code.u.oneOp.op.kind == CONSTANT) regs[regInt(leftReg)] = false;
                     fprintf(fp, "\n");
                     arg_num--;
-                    //if(temp->next->code.kind != PARAM)
-                        //arg_num = 0;
                     break;
                 default:
                     break;
@@ -429,16 +453,6 @@ void translateAsm(char* outputName)
                 line++;
                 temp = temp->next;
             }
-            /*while(temp != currentBlock->tail->next)
-            {
-                VarInBlock* var = currentBlock->vars;
-                while(var->next)
-                {
-                    printf("%s %s\n",var->var->op, var->useLine);
-                    var = var->next;
-                }
-                temp = temp->next;
-            }*/
             if(save)
             {
                 fprintf(fp, "  #saveAll:\n");

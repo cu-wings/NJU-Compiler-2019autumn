@@ -1,35 +1,5 @@
 #include "intercode.h"
-/*
-void adjust_code(InterCode code)
-{
-    int kind = code.kind;
-    switch (kind)
-    {
-    case ASSIGN: case ADDR: case VALUE: case VALTOVAL: case CALL: case DEC:
-        if(code.u.twoOp.left.type == ADDRESS)
-        {
-            if(code.u.twoOp.right.type == VAL)
-            {
-                code.u.twoOp.left.type = VAL;
-                Operand op = new_op(TEMPVAR, VAL, tempvarNum++);
-                new_code(VALTOVAL, code.u.twoOp.left, )
-            }
-        }
-        break;
-    case LABEL: case FUNC: case GOTO: case RET: case ARG: case PARAM: case READ: case WRITE:
-        
-        break;
-    case ADD: case SUB: case MUL: case DIVIDE:
-        
-        break;
-    case IFGOTO:
 
-        break;
-    default:
-        break;
-    }
-}
-*/
 void new_code(int kind, ...)
 {
     va_list args;
@@ -474,7 +444,7 @@ void translateVarDecParam(treeNode* root)
     else
         op = new_op(VARIABLE, VAL, varNum++, root->child->s_val);
     addOpList(op);
-    op.type = VARIABLE;
+    op.type = VAL;
     new_code(PARAM, op);
 }
 

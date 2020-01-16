@@ -231,6 +231,7 @@ void initBlock()
             break;
         case DEC:       // create a variable's size not 4
             offset = offset + code.u.twoOp.right.u.value - 4;
+            code.u.twoOp.left.type = ADDRESS;
             addBlockVarUse(lastFunc, lastBlock, code.u.twoOp.left, line, &offset);
             break;
         case ADD: case SUB: case MUL: case DIVIDE:
@@ -449,13 +450,25 @@ void saveAll(BasicBlock* block, FILE* fp)
     {
         if(temp->var->reg)
         {
-            fprintf(fp, "  sw $%s, -%d($fp)\n", regChar(temp->var->reg), temp->var->offset);
+            if(temp->var->op.type == VAL)
+                fprintf(fp, "  sw $%s, -%d($fp)\n", regChar(temp->var->reg), temp->var->offset);
             //regs[regInt(regChar(temp->var->reg))] = false;
             *(temp->var->reg) = false;
             temp->var->reg = NULL;
             freeThisUse(temp);
         }
         temp = temp->next;
+    }
+    if(ASMDEBUG)
+    {
+        for(int i = 8; i < 24; i++)
+        {
+            if(regs[i] == true)
+            {
+                printf("not save all:%d ",i);
+            }
+        }
+        printf("\n");
     }
 }
 
@@ -532,7 +545,39 @@ int regInt(char* s)
     return -1;
 }
 
-char* getReg(Operand op, BasicBlock* block, FILE* fp, int line)
+void getAddrVal(FILE* fp, char* s, int varPlace)
+{
+    //if(varPlace == 1) return;
+    fprintf(fp, "  lw ");
+    switch (varPlace)
+    {
+    case 1: fprintf(fp, "$v1"); break;
+    case 2: fprintf(fp, "$t8"); break;
+    case 3: fprintf(fp, "$t9"); break;
+    default:
+        break;
+    }
+    fprintf(fp, ", 0($%s)\n", s);
+}
+
+void loadFromStack(FILE* fp, VarInBlock* var, char* s, int varPlace, Operand op)
+{
+    //if(varPlace != 1)
+    //{
+        if(op.type == ADDRESS && op.kind == VARIABLE)
+            fprintf(fp, "  la $%s, -%d($fp)\n", s, var->var->offset);  //get address
+        else
+        {
+            fprintf(fp, "  lw $%s, -%d($fp)\n", s, var->var->offset);
+            if(op.type == ADDRESS && op.kind == TEMPVAR)
+            {
+                getAddrVal(fp, s, varPlace);
+            }
+        }
+    //}
+}
+
+char* getReg(Operand op, BasicBlock* block, FILE* fp, int line, int varPlace)
 {
     char* s = "";
     if(op.kind == VARIABLE || op.kind == TEMPVAR || op.kind == CONSTANT)
@@ -578,10 +623,7 @@ char* getReg(Operand op, BasicBlock* block, FILE* fp, int line)
                                 temp->var->reg = &regs[i];
                                 s = regChar(temp->var->reg);
                                 
-                                if(temp->var->op.type == ADDRESS && temp->var->op.kind == VARIABLE)
-                                    fprintf(fp, "  la $%s, -%d($fp)\n", s, temp->var->offset);  //get address
-                                else
-                                    fprintf(fp, "  lw $%s, -%d($fp)\n", s, temp->var->offset);
+                                loadFromStack(fp, temp, s, varPlace, op);
                                 //freeThisUse(temp);
                                 break;
                             }
@@ -593,6 +635,10 @@ char* getReg(Operand op, BasicBlock* block, FILE* fp, int line)
                     {
                         hasfreeReg = true;
                         s = regChar(temp->var->reg);
+                        if(op.type == ADDRESS && op.kind == TEMPVAR)
+                        {
+                            getAddrVal(fp, s, varPlace);
+                        }
                         freeThisUse(temp);
                         //need to do nothing
                     }
@@ -626,10 +672,7 @@ char* getReg(Operand op, BasicBlock* block, FILE* fp, int line)
                 thisVar->var->reg = &regs[regInt(s)];
                 fprintf(fp, "  sw $%s, -%d($fp)\n", s, farthestVar->var->offset);
 
-                if(thisVar->var->op.type == ADDRESS && thisVar->var->op.kind == VARIABLE)
-                    fprintf(fp, "  la $%s, -%d($fp)\n", s, thisVar->var->offset);  //get address
-                else
-                    fprintf(fp, "  lw $%s, -%d($fp)\n", s, thisVar->var->offset);
+                loadFromStack(fp, thisVar, s, varPlace, op);
                 
                 freeThisUse(farthestVar);
                 farthestVar->var->reg = NULL;

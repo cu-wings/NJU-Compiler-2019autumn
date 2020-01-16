@@ -1,7 +1,7 @@
 #ifndef COMPLIER_ASMCODE_H_
 #define COMPLIER_ASMCODE_H_
 #include "intercode.h"
-#define ASMDEBUG 1
+#define ASMDEBUG 0
 #define REGNUM 32
 typedef struct BasicBlock BasicBlock;
 typedef struct FunctionBlock FunctionBlock;
@@ -64,7 +64,7 @@ BasicBlock *firstBlock;
 void initBlock();
 void initRegs();
 void translateAsm(char* outputName);
-char* getReg(Operand op, BasicBlock* block, FILE* fp, int line);
+char* getReg(Operand op, BasicBlock* block, FILE* fp, int line, int varPlace);
 void saveAll(BasicBlock* block, FILE* fp);
 char* regChar(bool* reg);
 int regInt(char* reg);

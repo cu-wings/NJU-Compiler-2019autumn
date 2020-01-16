@@ -1,15 +1,26 @@
 FUNCTION main : 
-DEC v1 8
-t1 := #0 * #4
-t2 := &v1 + t1
-*t2 := #1
-t3 := #1 * #4
-t4 := &v1 + t3
-*t4 := #2
-t6 := #0 * #4
-t7 := &v1 + t6
-WRITE *t7
-t9 := #1 * #4
-t10 := &v1 + t9
-WRITE *t10
+v4 := #12
+v5 := #4
+v6 := #5
+t1 := v4 * v5
+v1 := t1
+t2 := v1 + v6
+t3 := t2 - v5
+v2 := t3
+t4 := v2 * v5
+t5 := v1 + t4
+v3 := t5
+WRITE v3
+t7 := v1 + v2
+t8 := v3 * t7
+t9 := t8 / #25
+v3 := t9
+t10 := v2 + v3
+t11 := v1 / v3
+t12 := t10 - t11
+t13 := v5 * #12
+t14 := t12 + t13
+v2 := t14
+WRITE v3
+WRITE v2
 RETURN #0
