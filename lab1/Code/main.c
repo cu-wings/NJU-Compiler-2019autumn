@@ -1,7 +1,10 @@
-#include <stdio.h>
+#include "tree.h"
 #include "syntax.tab.h"
 extern FILE* yyin;
-extern int yylex();
+//extern int yylex();
+extern int errorState;
+extern void yyrestart(FILE* yyin);
+extern treeNode *treeRoot;
 int main(int argc, char** argv)
 {
 	if(argc <= 1) return 1;
@@ -23,5 +26,8 @@ int main(int argc, char** argv)
 	}
 	yyrestart(f);
 	yyparse();
+	if(!errorState)
+		PrintTree(treeRoot,0);
+
 	return 0;
 }
