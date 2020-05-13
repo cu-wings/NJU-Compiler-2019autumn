@@ -522,15 +522,15 @@ FieldList DefList_Structure(treeNode* root, Type headType)
     if(root)
     {
         FieldList temp = Def_Structure(root->child, headType);
-        /*if(temp)
+        FieldList tempTail = temp;
+        if(tempTail)
         {
-            while(temp->tail)
+            while(tempTail->tail)
             {
-                temp = temp->tail;
+                tempTail = tempTail->tail;
             }
-        }*/
-        //temp->tail = (FieldList)malloc(sizeof(FieldList_));
-        temp->tail = DefList_Structure(root->child->next, headType);
+        }
+        tempTail->tail = DefList_Structure(root->child->next, headType);
         return temp;
     }
     else
