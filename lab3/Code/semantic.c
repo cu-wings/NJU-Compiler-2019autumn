@@ -496,6 +496,22 @@ Type StructSpecifier(treeNode* root)
             varType->u.structure->tail = NULL;
             return varType;
         }
+        else if(!strcmp(root->child->next->name, "LC"))
+        {
+            Type type = (Type)malloc(sizeof(Type_));
+            type->kind = STRUCTURE;
+            type->u.structure = NULL;
+            //char* name;
+            DefList_Structure(root->child->next->next, type);
+            //addSymbol(name, type, root->line, true);
+            Type varType = (Type)malloc(sizeof(Type_));
+            varType->kind = STRUCTVAR;
+            varType->u.structure = (FieldList)malloc(sizeof(FieldList_));
+            //varType->u.structure->name = name;
+            varType->u.structure->type = type;
+            varType->u.structure->tail = NULL;
+            return varType;
+        }
         else        //StructSpecifier -> STRUCT Tag
         {
             if(SEDEBUG) printf("Tag\n");

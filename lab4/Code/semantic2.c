@@ -394,28 +394,29 @@ void Args(treeNode* root, Type type)
 			else
 				ptr = NULL;
 			
-			while(root != NULL && ptr != NULL) {
+			treeNode *tempRoot = root;
+			while(tempRoot != NULL && ptr != NULL) {
 				/*if(ptr == type->u.function.param) //Function calls itself
 				{ 
 					serror("The actual and formal parameters of a function mismatch", root->line, 9);
 					return;
 				}*/
 				Type tmp1 = getType(ptr->name);
-				Type tmp2 = Exp(root->child);
+				Type tmp2 = Exp(tempRoot->child);
 				if(!sameType(tmp1, tmp2)) //type of parameters differ
 				{ 
-					serror("The actual and formal parameters of a function mismatch", root->line, 9);
+					serror("The actual and formal parameters of a function mismatch", tempRoot->line, 9);
 					return;
 				}
 				//Args -> Exp COMMA Args
 				ptr = ptr->tail;
-				if(root->child->next)
-					root = root->child->next->next;
+				if(tempRoot->child->next)
+					tempRoot = tempRoot->child->next->next;
 				else
-					root = NULL;
+					tempRoot = NULL;
 				
 			}
-			if(ptr != NULL || root != NULL)  // number of parameters differ
+			if(ptr != NULL || tempRoot != NULL)  // number of parameters differ
 			{
 				serror("The actual and formal parameters of a function mismatch", root->line, 9);
 			}
