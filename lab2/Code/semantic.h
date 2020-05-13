@@ -7,6 +7,7 @@ typedef unsigned short bool;
 #define false 0
 #define MAX_TABLE 0x3fff
 #define DEBUG 0
+#define STRUCTDEBUG 0
 extern treeNode *treeRoot;
 typedef struct Type_* Type;
 typedef struct FieldList_* FieldList;

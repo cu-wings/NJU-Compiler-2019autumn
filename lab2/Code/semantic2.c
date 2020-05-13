@@ -6,9 +6,19 @@ Type FindStructureFiled(Type type, char * name, int line)
 		serror("Use '.' for unstructured variables", line, 13);
 		return NULL;
 	}
+	if(STRUCTDEBUG)
+	{
+		printf("struct:%s\n",type->u.structure->name);
+		if(type->u.structure->tail)
+			printf("struct2:%s\n",type->u.structure->tail->name);
+	}
 	FieldList temp = type->u.structure->type->u.structure;
 	while(temp != NULL)
 	{
+		if(STRUCTDEBUG)
+        {
+            printf("domain:%s\n",temp->name);
+        }
 		if(!strcmp(temp->name, name)) return temp->type;           
 		temp = temp->tail;
 	}
