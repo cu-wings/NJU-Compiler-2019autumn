@@ -94,7 +94,16 @@ Operand translateExp(treeNode *root)
 				treeNode* tempRoot = root;
 				while(strcmp(tempRoot->child->name, "ID"))
 				{
+					
 					tempRoot = tempRoot->child;
+				}
+				if(tempRoot->next)
+				{
+					if(!strcmp(tempRoot->next->name,"DOT"))
+					{
+						irerror = 1;
+						return new_op(TEMPVAR, VAL, -1);
+					}
 				}
 				Operand op3 = translateExp(tempRoot);	//get array op
 				//op3.kind = VARIABLE;
